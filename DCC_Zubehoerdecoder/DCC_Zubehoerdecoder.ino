@@ -1,3 +1,4 @@
+
 #include <NmraDcc.h>
 #include <MobaTools.h>
 
@@ -48,7 +49,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x31
 // für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -147,8 +148,8 @@ byte opMode;                    // Bit 0..3 aus modeVal
 byte rocoOffs;                  // 0 bei ROCO-Adressierung, 4 sonst
 byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
-byte weicheSoll[WeichenZahl];  // Solllage der Weichen
-byte weicheIst[WeichenZahl];   // Istlagen der Weichen
+byte weicheSoll[WeichenZahl];   // Solllage der Weichen
+byte weicheIst[WeichenZahl];    // Istlagen der Weichen
 #define GERADE  0x0
 #define ABZW    0x1
 #define MOVING  0x2               // nur für Ist-Zustand, Bit 1 gesetzt während Umlauf
@@ -211,7 +212,7 @@ EggTimer ledTimer;  // zum Blinken der Programmierled
 // Pulsetimer für Doppelspulenantriebe und Blinken
 EggTimer pulseT[WeichenZahl];
 EggTimer debounceT;   // Encoder entprellen
-const byte debTime = 4;
+const byte debTime = 2;
 NmraDcc Dcc;
 
 
@@ -334,7 +335,7 @@ void setup() {
     
 
     
-    if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
+    if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 150 ) {
         // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
@@ -551,6 +552,7 @@ void loop() {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
             if ( weicheIst[i] & MOVING ) {
                 // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
+                //DB_PRINT( "WeicheIx=%d bewegt, Level: %d", i, weicheS[i].moving() );
                 if ( weicheS[i].moving() < 50 ) relaisOut[i] = weicheIst[i]& 0x1;
                 if ( weicheS[i].moving() == 0 ) {
                     // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
@@ -754,11 +756,12 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
             weicheSoll[i] =  OutputAddr & 0x1;
-            DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
+            // prüfen, ob per Encoder die Position geändert werden soll
+            ChkAdjEncode( i );
+            //DB_PRINT( "eigene Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
             break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
         }
     }
-    ChkAdjEncode( i );
 }
 //---------------------------------------------------
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
@@ -891,8 +894,11 @@ void getEncoder( void ) {
     if ( encoderCount != 0 ) {
         //DB_PRINT( "Encoder: %d", encoderCount );        
     }
+    // Schalter des Drehencoders
+    //DB_PRINT( "AnalogRead: %d", analogRead( resModeP ) );        
     #endif
 
+    //DB_PRINT( "Weiche: %d, Status: %d", adjWix, weicheIst[adjWix] ); 
     if ( adjWix < WeichenZahl && !(weicheIst[adjWix] & MOVING ) ) {
         // es gibt eine aktuell zu justierende Weiche, die sich nicht
         // gerade bewegt
@@ -908,8 +914,9 @@ void getEncoder( void ) {
             }
             if ( (encoderCount>0 && adjPulse<180) || (encoderCount<0 && adjPulse>0) )
                 adjPulse += encoderCount; // adjPulse nur im Bereich 0...180 
+            //DB_PRINT( "AdjPulse: %d", adjPulse );        
             weicheS[adjWix].write( adjPulse );
-        } else if ( analogRead( resModeP ) < 500 ) {
+        } else if ( analogRead( resModeP ) < 150 ) {
             // Mittelstellungstaster gedrückt
             weicheS[adjWix].write( 90 );
         }
@@ -935,6 +942,7 @@ void ChkAdjEncode( byte WIndex ){
             adjPulse = NO_ADJ;
         }
     }
+    DB_PRINT( "AdjIdx: %d, ChkIdx: %d, Pulse: %d", adjWix, WIndex, adjPulse);
     adjWix = WIndex;
     if ( adjWix < WeichenZahl ) 
         if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;

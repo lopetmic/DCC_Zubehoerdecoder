@@ -9,11 +9,11 @@
  *  - Die Betriebsmodi und Startverhalten wird über die Analogeingänge A4/A5 (parametrierbar) eingestellt. Dazu 
  *    müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
  *    die Modi eingestellt:
- *     A5:   5V (offen) normaler Betriebsmodus, kein PoM
+ *     A7:   5V (offen) normaler Betriebsmodus, kein PoM
  *           3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
  *           1,6V (Spannungsteiler 2:1) 
  *           0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
- *     A4:   wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
+ *     A6:   wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
  *           Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
  *           zur vorhergehenden Position.
  *           Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
@@ -90,46 +90,46 @@
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
-const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   A7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
 // Drehencoder zur Servojustierung ...........
-//#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
+#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A2;
+const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   A4;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  17;    // DCC-Decoderadresse
+const byte DccAddr          = 4;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
-const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
+const int  PomAddr          = 4;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC };
-const byte out1Pins[]   =   {       A2,          9,       12,       A0,       A1,                5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,         10,       NC,        7,        3,                6 };
-const byte out3Pins[]   =   {       NC,         11,       NC,        8,       NC,               NC };
+const byte iniTyp[]     =   {   FSERVO,   FSERVO,   FSERVO };    //FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC };
+const byte out1Pins[]   =   {       A0,       A1,       A2 };    //   A2,          9,       12,       A0,       A1,                5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        5,       NC,       A3 };    //   A3,         10,       NC,        7,        3,                6 };
+const byte out3Pins[]   =   {       NC,       NC,       NC };    //   NC,         11,       NC,        8,       NC,               NC };
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
 // 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { CAUTOOFF,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010,0b00000100,        0,        0,               50 };
-const byte iniPar2[]      = {       50, 0b0000001,0b00001001,      180,      180,               50 };
-const byte iniPar3[]      = {        0,        50,         8,        8,        8,              100 };
+const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF }; //,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {       60,       60,       60 }; //, 0b0000010,0b00000100,        0,        0,               50 };
+const byte iniPar2[]      = {      120,      120,      120 }; //, 0b0000001,0b00001001,      180,      180,               50 };
+const byte iniPar3[]      = {        8,       8 ,        8 }; //,        50,         8,        8,        8,              100 };
 
 //------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
