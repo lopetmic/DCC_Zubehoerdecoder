@@ -86,11 +86,12 @@ static char dbgbuf[60];
 #define AUTOADDR    1   // Automatische Addresserkennung nach Erstinitiierung oder wenn Programmiermodus aktiv
 #define ROCOADDR    2   // 0: Outputadresse 4 ist Weichenadress 1
                         // 1: Outputadresse 0 ist Weichenadress 1
-#define SAUTOOFF 0x01
-#define CAUTOOFF 0x01
-#define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
-#define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
-#define BLKSOFT 0x04    // FSTATIC: Ausgänge als Softleds
+#define SAUTOOFF 0x01   // Servos abschalten nach Erreichen der Position
+#define CAUTOOFF 0x01   // Coils nach Einschaltzeit automatisch abschalten
+#define CDCCOFF  0x08   // Coils abschalten mit DCC Befehl
+#define BLKMODE  0x01   // FSTATIC: Ausgänge blinken
+#define BLKSTRT  0x02   // FSTATIC: Starten mit beide Ausgängen EIN
+#define BLKSOFT  0x04   // FSTATIC: Ausgänge als Softleds
 
 const byte dccPin       =   2;
 const byte ackPin       =   4;
@@ -154,6 +155,9 @@ byte weicheIst[WeichenZahl];    // Istlagen der Weichen
 #define ABZW    0x1
 #define MOVING  0x2               // nur für Ist-Zustand, Bit 1 gesetzt während Umlauf
 #define BLKON   0x4               // nur für Ist-Zustand, Blinken ist EIN
+enum eActLevel {eActOff, eActCoil1, eActCoil2};
+byte relaisOut[WeichenZahl];      // Ausgabewerte für die Relais ( 0/1, entspricht Sollwert )
+byte pulseON[WeichenZahl];        // CoiL: Flag ob Pausentimer läuft
 
 //- - - Variable für Lichtsignalsteuerung - - - - - - -
 #define signalSoll(i) weicheIst[i+1]
@@ -175,10 +179,7 @@ int8_t portTyp[PPF][WeichenZahl];   // -1 = Standardport
 byte slIx;                        // Zählindex für die Vergabe der Softled-Objekte bei der Initiierung
 SoftLed SigLed[ MAX_LEDS ];
 
-
-byte relaisOut[WeichenZahl];    // Ausgabewerte für die Relais ( 0/1, entspricht Sollwert )
-byte pulseON[WeichenZahl];    // CoiL: Flag ob Pausentimer läuft
-
+// -------- Programmiermodi ----------------------------------------------------------------
 byte progMode;      // Merker ob Decoder im Programmiermodus
 #define NORMALMODE  0
 #define ADDRMODE    1   // Warte auf 1. Telegramm zur Bestimmung der ersten Weichenadresse ( Prog-Led blinkt )
@@ -241,7 +242,7 @@ static void setIoPin( byte wIx, byte pIx, byte Value ) {
     // Falls es ein Port der Folgeadresse ist (Signal!)
     wIx += ( pIx / PPF );
     pIx = pIx % PPF;
-    DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pin  %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, getIoPin(wIx,pIx), Value ); 
+    //DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pin  %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, getIoPin(wIx,pIx), Value ); 
     if ( portTyp[pIx][wIx] >=0 ) {
         // Es ist ein Softled-Ausgang
         byte typ = Value? LINEAR : BULB;
@@ -333,8 +334,7 @@ void setup() {
         progMode = ADDRMODE;
     }
     
-
-    
+    // CV SetUp    
     if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 150 ) {
         // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
@@ -380,7 +380,7 @@ void setup() {
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
       Serial.begin(115200); //Debugging
-    #ifdef DEBUG1
+    #ifdef DEBUG
       DB_PRINT( "Betr:%d -> Mode=", temp );
       switch ( progMode ) {
         case NORMALMODE:
@@ -464,7 +464,7 @@ void setup() {
                         SigLed[slIx].riseTime( 500 );
                         SigLed[slIx].write( OFF, LINEAR );
                         portTyp[i][wIx] = slIx++;
-                        DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
+                        //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
                     }
                 }
             } else {
@@ -587,43 +587,68 @@ void loop() {
             
             break;
 
-          case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
-            if ( ! ( !pulseON[i] && pulseT[i].running() ) && ! (weicheIst[i]&MOVING) ) {
-                // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft
-                if ( weicheIst[i] != weicheSoll[i] ) {
-                    // Weiche soll geschaltet werden
-                    //DB_PRINT(" i=%d, Ist=%d, Soll=%d", i, weicheIst[i], weicheSoll[i] );
-                    if ( weicheIst[i] ) {
-                        // Out1 aktiv setzen
-                        digitalWrite( coil1Pins[i], HIGH );
-                        digitalWrite( coil2Pins[i], LOW );
-                        //DB_PRINT( "Pin%d HIGH, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
-                    } else {
-                        // Out2 aktiv setzen
-                        digitalWrite( coil2Pins[i], HIGH );
-                        digitalWrite( coil1Pins[i], LOW );
-                        //DB_PRINT( "Pin%d LOW, Pin%d HIGH", coil1Pins[i], coil2Pins[i] );
+          case FCOIL: // Doppelspulenantriebe ------------------------------------------------------
+            if ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & CAUTOOFF ) {
+                if ( ! ( !pulseON[i] && pulseT[i].running() ) && !( weicheIst[i] & MOVING) ) {
+                    // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft
+                    if ( weicheIst[i] != weicheSoll[i] ) {
+                        // Weiche soll geschaltet werden
+                        //DB_PRINT("FCOIL CAUTOOFF %d, Ist=%d, Soll=%d", i, weicheIst[i], weicheSoll[i] );
+                        if ( weicheIst[i] ) {
+                            // Out1 aktiv setzen
+                            digitalWrite( coil1Pins[i], HIGH );
+                            digitalWrite( coil2Pins[i], LOW );
+                            //DB_PRINT( "Pin%d HIGH, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
+                        } else {
+                            // Out2 aktiv setzen
+                            digitalWrite( coil2Pins[i], HIGH );
+                            digitalWrite( coil1Pins[i], LOW );
+                            //DB_PRINT( "Pin%d LOW, Pin%d HIGH", coil1Pins[i], coil2Pins[i] );
+                        }
+                        pulseON[i] = true;
+                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) * 10 );
+                        weicheIst[i] = weicheSoll[i] | MOVING;
+                        Dcc.setCV( (int) &CV->Fkt[i].State, weicheSoll[i] );
                     }
-                    pulseON[i] = true;
-                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) * 10 );
-                    weicheIst[i] = weicheSoll[i] | MOVING;
-                    Dcc.setCV( (int) &CV->Fkt[i].State, weicheSoll[i] );
                 }
-                
-            }
-            // Timer für Spulenantriebe abfragen
-            if ( pulseON[i] ) {
-                // prüfen ab Impuls abgeschaltet werden muss
-                // (Timer läuft nicht mehr, aber MOVING-Bit noch gesetzt)
-                if ( !pulseT[i].running() && (weicheIst[i]&MOVING) ) {
-                    digitalWrite( coil2Pins[i], LOW );
-                    digitalWrite( coil1Pins[i], LOW );
-                    weicheIst[i]&= ~MOVING;
-                    //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
-                    pulseON[i] = false;
-                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) * 10 );
+                // Timer für Spulenantriebe abfragen
+                if ( pulseON[i] ) {
+                    // prüfen ab Impuls abgeschaltet werden muss
+                    // (Timer läuft nicht mehr, aber MOVING-Bit noch gesetzt)
+                    if ( !pulseT[i].running() && (weicheIst[i]&MOVING) ) {
+                        digitalWrite( coil2Pins[i], LOW );
+                        digitalWrite( coil1Pins[i], LOW );
+                        weicheIst[i]&= ~MOVING;
+                        //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
+                        pulseON[i] = false;
+                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) * 10 );
+                    }
                 }
-                
+            } else if ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & CDCCOFF ) {
+                // FCOIl im Dauerbetrieb
+                // wird hier zum Ansteuern eines DC Motors mit 2 Relais genutzt
+                if ( weicheIst[i] != weicheSoll[i] ) {
+                    // Zustandsaenderungt gewünscht
+                        //DB_PRINT("FCOIL DCCOFF %d, Ist=%d, Soll=%d", i, weicheIst[i], weicheSoll[i] );
+                        if ( weicheSoll[i] == eActOff ) {
+                            // Motor aus
+                            digitalWrite( coil1Pins[i], LOW );
+                            digitalWrite( coil2Pins[i], LOW );
+                            //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
+                        } else if ( weicheSoll[i] == eActCoil1 ) {
+                            // Spule 1 / Motor links
+                            digitalWrite( coil1Pins[i], HIGH );
+                            digitalWrite( coil2Pins[i], LOW );
+                            //DB_PRINT( "Pin%d HIGH, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
+                        } else if ( weicheSoll[i] == eActCoil2 ) {
+                            // Spule 1 / Motor links
+                            digitalWrite( coil1Pins[i], LOW );
+                            digitalWrite( coil2Pins[i], HIGH );
+                            //DB_PRINT( "Pin%d LOW, Pin%d HIGH", coil1Pins[i], coil2Pins[i] );
+                        }
+                        weicheIst[i] = weicheSoll[i];
+                        Dcc.setCV( (int) &CV->Fkt[i].State, weicheSoll[i] );
+                }
             }
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
@@ -635,7 +660,7 @@ void loop() {
                 } else {                   
                     setIoPin( i,1, !weicheSoll[i] );                    
                 }
-                //DB_PRINT( "Soll=%d, Ist=%d", weicheSoll[i], weicheIst[i] );
+                //DB_PRINT( "FSTATIC %d Soll=%d, Ist=%d", i, weicheSoll[i], weicheIst[i] );
                 weicheIst[i] = weicheSoll[i];
                 Dcc.setCV( (int) &CV->Fkt[i].State, weicheIst[i] );
                 if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLKMODE ) ) {
@@ -679,14 +704,14 @@ void loop() {
                     // Sollzustand hat sich verändert, übernehmen, Flag setzen und Timer aufziehen
                     signalIst(i) = signalSoll(i) | SIG_DARK;
                     pulseT[i].setTime( SIG_WAIT_TIME ) ;
-                    DB_PRINT( "Neuer Signalwert ist=0x%02x ", signalIst(i) );
+                    //DB_PRINT( "Neuer Signalwert ist=0x%02x ", signalIst(i) );
                 }
                 break;
               case SIG_DARK:
                 // wenn Timer abgelaufen, Signalbild dunkelschalten
                 if ( ! pulseT[i].running() ) {
                     // ist abgelaufen: Soft-Ausgänge zurücksetzen
-                    DB_PRINT( " Signal %d dunkelschalten", i );
+                    //DB_PRINT( " Signal %d dunkelschalten", i );
                     clrSignal(i); // Signalbild dunkelschalten
                     pulseT[i].setTime( SIG_DARK_TIME );
                     signalIst(i) &= ~SIG_STATE_MASK; 
@@ -696,7 +721,7 @@ void loop() {
               case SIG_NEW:
                 // Wenn Timer abgelaufen, neues Signalbild aufschalten
                 if ( ! pulseT[i].running() ) {
-                    DB_PRINT( " Signal %d aufschalten",  signalIst(i) );
+                    //DB_PRINT( " Signal %d aufschalten",  signalIst(i) );
                     // ist abgelaufen: neues Signalbild
                     signalIst(i) = SIG_WAIT | signalSoll(i); // = aktueller sollwert, der gesetzt wird
                     setSignal(i); // Signalbild einschalten
@@ -751,15 +776,29 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         //DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
     }
     // Testen ob eigene Weichenadresse
-    //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
+    //DB_PRINT( "DCC: DecAddr: %d, Weichenaddr: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
     for ( i = 0; i < WeichenZahl; i++ ) {
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
-            weicheSoll[i] =  OutputAddr & 0x1;
-            // prüfen, ob per Encoder die Position geändert werden soll
-            ChkAdjEncode( i );
-            //DB_PRINT( "eigene Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
-            break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
+            if (( iniTyp[i] != FCOIL ) && ( iniFmode[i] != CDCCOFF)) {
+                weicheSoll[i] =  OutputAddr & 0x1;
+                // prüfen, ob per Encoder die Position geändert werden soll
+                ChkAdjEncode( i );
+                //DB_PRINT( "eigene Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
+                break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
+            } else {   // FCOIL mit CDCCOFF
+                if ( State == 0 ) {
+                    // Motor aus
+                    weicheSoll[i] = eActOff;
+                } else if ( ( State & 0x08 ) && ( OutputAddr & 0x01 ) ) {
+                    // Motor Drehrichtung links
+                    weicheSoll[i] = eActCoil1;                    
+                } else if ( ( State & 0x08 ) && ( ! ( OutputAddr & 0x01 ) ) ) {
+                    // Motor Drehrichtung rechts
+                    weicheSoll[i] = eActCoil2;                    
+                }
+                //DB_PRINT( "eigener Motor %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
+            }
         }
     }
 }
@@ -776,7 +815,7 @@ void notifyCVAck ( void ) {
 void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     // Es wurde ein CV verändert. Ist dies eine aktive Servoposition, dann die Servoposition
     // entsprechend anpassen
-    DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
+    //DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
     for ( byte i=0; i<WeichenZahl; i++ ) {
         // prüfen ob Ausgang einen Servo ansteuert:
         switch ( iniTyp[i] ) {
@@ -942,7 +981,7 @@ void ChkAdjEncode( byte WIndex ){
             adjPulse = NO_ADJ;
         }
     }
-    DB_PRINT( "AdjIdx: %d, ChkIdx: %d, Pulse: %d", adjWix, WIndex, adjPulse);
+    //DB_PRINT( "AdjIdx: %d, ChkIdx: %d, Pulse: %d", adjWix, WIndex, adjPulse);
     adjWix = WIndex;
     if ( adjWix < WeichenZahl ) 
         if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;

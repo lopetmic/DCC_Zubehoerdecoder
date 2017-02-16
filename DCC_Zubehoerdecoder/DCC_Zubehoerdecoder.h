@@ -108,28 +108,29 @@ const byte encode2P     =   A4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          = 4;    // DCC-Decoderadresse
+const byte DccAddr          = 1;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
-const int  PomAddr          = 4;    // Adresse für die Pom-Programmierung ( CV48/49 )
+const int  PomAddr          = 1;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {   FSERVO,   FSERVO,   FSERVO };    //FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC };
-const byte out1Pins[]   =   {       A0,       A1,       A2 };    //   A2,          9,       12,       A0,       A1,                5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        5,       NC,       A3 };    //   A3,         10,       NC,        7,        3,                6 };
-const byte out3Pins[]   =   {       NC,       NC,       NC };    //   NC,         11,       NC,        8,       NC,               NC };
+const byte iniTyp[]     =   {   FSTATIC,  FSTATIC,  FSERVO,   FSERVO,    FCOIL,    FCOIL,   FSERVO,    FCOIL };    //FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,    FSTATIC };
+const byte out1Pins[]   =   {         3,        6,      A0,       A1,        7,        9,       A2,       11 };    //   A2,          9,       12,       A0,       A1,          5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        NC,       NC,       5,       NC,        8,       10,       A3,       12 };    //   A3,         10,       NC,        7,        3,          6 };
+const byte out3Pins[]   =   {        NC,       NC,      NC,       NC,       NC,       NC,       NC,       NC };    //   NC,         11,       NC,        8,       NC,         NC };
+//                                2l/3L,       L1,      W1,    Gl.Sp,   Fb Wst, Fb hintn,       W2,  Fb vorn
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
 // 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF }; //,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       60,       60,       60 }; //, 0b0000010,0b00000100,        0,        0,               50 };
-const byte iniPar2[]      = {      120,      120,      120 }; //, 0b0000001,0b00001001,      180,      180,               50 };
-const byte iniPar3[]      = {        8,       8 ,        8 }; //,        50,         8,        8,        8,              100 };
+const byte iniFmode[]     = {        0,        0, SAUTOOFF, SAUTOOFF,  CDCCOFF,  CDCCOFF, SAUTOOFF,  CDCCOFF }; //,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {        0,        0,       60,       60,        0,        0,       60,        0 }; //, 0b0000010,0b00000100,        0,        0,               50 };
+const byte iniPar2[]      = {        0,        0,      120,      120,        0,        0,      120,        0 }; //, 0b0000001,0b00001001,      180,      180,               50 };
+const byte iniPar3[]      = {        0,        0,        8,       8 ,        0,        0,        8,        0 }; //,        50,         8,        8,        8,              100 };
 
 //------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
@@ -141,7 +142,7 @@ const byte iniServoAbzw     = 180;   // = Par2;
 const byte inispeed = 8;             // = Par3;
 
 // Standardwerte für Puls-Ausgang (Doppelspule)
-const byte iniCoilMode     =  CAUTOOFF;    // = (Mode) automatische Pulsbegrenzung eingeschaltet (0=AUS)
+const byte iniCoilMode     = CAUTOOFF;     // = (Mode) automatische Pulsbegrenzung eingeschaltet (0=AUS)
 const byte iniCoilOn       = 50;    // = (Par1) 500ms Impuls
 const byte iniCoilOff      = 20;    // = (Par2) mindestens 2Sec Pause zwischen 2 Pulsen
 
