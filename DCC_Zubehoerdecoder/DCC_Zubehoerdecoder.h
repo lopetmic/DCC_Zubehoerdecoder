@@ -102,37 +102,154 @@ const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Ser
                             // verwendet werden.
 const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
 const byte encode2P     =   A4;
-// ............................................
+// ..................................................
+// defines für die Konfigurationen der Decoder Module
+//#define DECMODULE_1
+//#define DECMODULE_4
+//#define DECEXAMPLE
+// .................................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+// Konfiguration für Decoder des Moduls 1
+#ifdef DECMODULE_1
 const byte DccAddr          = 1;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 1;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
-
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {   FSTATIC,  FSTATIC,  FSERVO,   FSERVO,    FCOIL,    FCOIL,   FSERVO,    FCOIL };    //FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,    FSTATIC };
-const byte out1Pins[]   =   {         3,        6,      A0,       A1,        7,        9,       A2,       11 };    //   A2,          9,       12,       A0,       A1,          5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        NC,       NC,       5,       NC,        8,       10,       A3,       12 };    //   A3,         10,       NC,        7,        3,          6 };
-const byte out3Pins[]   =   {        NC,       NC,      NC,       NC,       NC,       NC,       NC,       NC };    //   NC,         11,       NC,        8,       NC,         NC };
-//                                2l/3L,       L1,      W1,    Gl.Sp,   Fb Wst, Fb hintn,       W2,  Fb vorn
+//                                2l/3L,       L1,       W1,    Gl.Sp,   Fb Wst, Fb hintn,       W2,  Fb vorn
+const byte iniTyp[]     =   {   FSTATIC,  FSTATIC,   FSERVO,   FSERVO,    FCOIL,    FCOIL,   FSERVO,    FCOIL };
+const byte out1Pins[]   =   {         3,        6,       A0,       A1,        7,        9,       A2,       11 };
+const byte out2Pins[]   =   {        NC,       NC,        5,       NC,        8,       10,       A3,       12 };
+const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
 // 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = {        0,        0, SAUTOOFF, SAUTOOFF,  CDCCOFF,  CDCCOFF, SAUTOOFF,  CDCCOFF }; //,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {        0,        0,       60,       60,        0,        0,       60,        0 }; //, 0b0000010,0b00000100,        0,        0,               50 };
-const byte iniPar2[]      = {        0,        0,      120,      120,        0,        0,      120,        0 }; //, 0b0000001,0b00001001,      180,      180,               50 };
-const byte iniPar3[]      = {        0,        0,        8,       8 ,        0,        0,        8,        0 }; //,        50,         8,        8,        8,              100 };
+const byte iniFmode[]     = {         0,        0, SAUTOOFF, SAUTOOFF,  CDCCOFF,  CDCCOFF, SAUTOOFF,  CDCCOFF };
+const byte iniPar1[]      = {         0,        0,       60,       60,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,        0,      120,      120,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
+
+#endif
 
 //------------------------------------------------------------------------------------
+// Konfiguration für Decoder des Moduls 2
+#ifdef DECMODULE_2
+const byte DccAddr          = 9;    // DCC-Decoderadresse
+const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const int  PomAddr          = 9;    // Adresse für die Pom-Programmierung ( CV48/49 )
+
+// Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
+//            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
+const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+//                                2l/3L,       W3, Fb hintn, Fb mitte,  Fb vorn,       L2,  Srv Res,   Fb Res
+const byte iniTyp[]     =   {   FSTATIC,   FSERVO,    FCOIL,    FCOIL,    FCOIL,  FSTATIC,   FSERVO,    FCOIL };
+const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
+
+// Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
+// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
+// für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
+// In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
+// Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
+const byte iniFmode[]     = {         0, SAUTOOFF,  CDCCOFF,  CDCCOFF,  CDCCOFF,        0, SAUTOOFF,  CDCCOFF };
+const byte iniPar1[]      = {         0,       60,        0,        0,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,      120,        0,        0,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
+
+#endif
+
+//------------------------------------------------------------------------------------
+// Konfiguration für Decoder des Moduls 3
+#ifdef DECMODULE_3
+const byte DccAddr          = 17;    // DCC-Decoderadresse
+const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const int  PomAddr          = 17;    // Adresse für die Pom-Programmierung ( CV48/49 )
+
+// Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
+//            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
+const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+//                                2l/3L,       W4, Fb hintn, Fb mitte,  Fb vorn,       L3,  Srv Res,    L Res
+const byte iniTyp[]     =   {   FSTATIC,   FSERVO,    FCOIL,    FCOIL,    FCOIL,  FSTATIC,   FSERVO,  FSTATIC };
+const byte out1Pins[]   =   {         3,       A0,        7,        9,       11,       A2,       A1,        5 };
+const byte out2Pins[]   =   {        NC,       A3,        8,       10,       12,       NC,       NC,       NC };
+const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
+
+// Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
+// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
+// für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
+// In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
+// Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
+const byte iniFmode[]     = {         0, SAUTOOFF,  CDCCOFF,  CDCCOFF,  CDCCOFF,        0, SAUTOOFF,        0 };
+const byte iniPar1[]      = {         0,       60,        0,        0,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,      120,        0,        0,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
+
+#endif
+
+//------------------------------------------------------------------------------------
+// Konfiguration für Decoder des Moduls 4
+#ifdef DECMODULE_4
+const byte DccAddr          = 25;    // DCC-Decoderadresse
+const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const int  PomAddr          = 25;    // Adresse für die Pom-Programmierung ( CV48/49 )
+
+// Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
+//            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
+const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+//                                2l/3L,       L1,       W1,    Gl.Sp,   Fb Wst, Fb hintn,       W2,  Fb vorn
+const byte iniTyp[]     =   {   FSTATIC,  FSTATIC,   FSERVO,   FSERVO,    FCOIL,    FCOIL,   FSERVO,    FCOIL };
+const byte out1Pins[]   =   {         3,        6,       A0,       A1,        7,        9,       A2,       11 };
+const byte out2Pins[]   =   {        NC,       NC,        5,       NC,        8,       10,       A3,       12 };
+const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
+
+// Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
+// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
+// für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
+// In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
+// Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
+const byte iniFmode[]     = {         0,        0, SAUTOOFF, SAUTOOFF,  CDCCOFF,  CDCCOFF, SAUTOOFF,  CDCCOFF };
+const byte iniPar1[]      = {         0,        0,       60,       60,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,        0,      120,      120,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        0,        8,       8 ,        0,        0,        8,        0 };
+
+#endif
+
+//------------------------------------------------------------------------------------
+// Konfiguration für Beispieldecoder
+#ifdef DECEXAMPLE
+const byte DccAddr          = 1;    // DCC-Decoderadresse
+const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
+
+// Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
+//            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
+const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+const byte iniTyp[]     =   {   FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,    FSTATIC };
+const byte out1Pins[]   =   {      A2,          9,       12,       A0,       A1,          5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {      A3,         10,       NC,        7,        3,          6 };
+const byte out3Pins[]   =   {      NC,         11,       NC,        8,       NC,         NC };
+
+// Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
+// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
+// für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
+// In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
+// Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
+const byte iniFmode[]     = {        0,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {        0, 0b0000010,0b00000100,        0,        0,               50 };
+const byte iniPar2[]      = {        0, 0b0000001,0b00001001,      180,      180,               50 };
+const byte iniPar3[]      = {        0,        50,         8,        8,        8,              100 };
+
+#endif
+//------------------------------------------------------------------------------------
+
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
 // Sie werden im Programm nicht direkt verwendet!
 // Standardwerte für Servoausgang 
