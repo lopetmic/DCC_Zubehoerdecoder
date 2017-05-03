@@ -104,8 +104,8 @@ const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
 const byte encode2P     =   A4;
 // ..................................................
 // defines für die Konfigurationen der Decoder Module
-#define DECMODULE_1
-//#define DECMODULE_2
+//#define DECMODULE_1
+#define DECMODULE_2
 //#define DECMODULE_3
 //#define DECMODULE_4
 //#define DECEXAMPLE
@@ -154,8 +154,8 @@ const int  PomAddr          = 9;    // Adresse für die Pom-Programmierung ( CV4
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 //                                2l/3L,       W3, Fb hintn, Fb mitte,  Fb vorn,       L2,  Srv Res,   Fb Res
 const byte iniTyp[]     =   {   FSTATIC,   FSERVO,    FCOIL,    FCOIL,    FCOIL,  FSTATIC,   FSERVO,    FCOIL };
-const byte out1Pins[]   =   {         3,       A0,       A3,       11,        9,       A2,       A1,        5 };
-const byte out2Pins[]   =   {        NC,        7,       12,       10,        8,       NC,       NC,        6 };
+const byte out1Pins[]   =   {         3,       A0,       A3,       10,        9,       A2,       A1,        5 };
+const byte out2Pins[]   =   {        NC,        7,       12,       11,        8,       NC,       NC,        6 };
 const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
@@ -164,9 +164,9 @@ const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
 const byte iniFmode[]     = {         0, SAUTOOFF,  CDCCOFF,  CDCCOFF,  CDCCOFF,        0, SAUTOOFF,  CDCCOFF };
-const byte iniPar1[]      = {         0,       60,        0,        0,        0,        0,       60,        0 };
-const byte iniPar2[]      = {         0,      120,        0,        0,        0,        0,      120,        0 };
-const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
+const byte iniPar1[]      = {         0,       76,        0,        0,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,       98,        0,        0,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        8,        8,        8,        0,        0,        8,        0 };
 
 #endif
 
@@ -182,8 +182,8 @@ const int  PomAddr          = 17;    // Adresse für die Pom-Programmierung ( CV
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 //                                2l/3L,       W4, Fb hintn, Fb mitte,  Fb vorn,       L3,  Srv Res,    L Res
 const byte iniTyp[]     =   {   FSTATIC,   FSERVO,    FCOIL,    FCOIL,    FCOIL,  FSTATIC,   FSERVO,  FSTATIC };
-const byte out1Pins[]   =   {         3,       A0,        7,        9,       11,       A2,       A1,        5 };
-const byte out2Pins[]   =   {        NC,       A3,        8,       10,       12,       NC,       NC,       NC };
+const byte out1Pins[]   =   {         3,       A0,        7,       10,       11,       A2,       A1,        5 };
+const byte out2Pins[]   =   {        NC,       A3,        8,        9,       12,       NC,       NC,       NC };
 const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,       NC,       NC,       NC };
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
@@ -192,9 +192,9 @@ const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
 const byte iniFmode[]     = {         0, SAUTOOFF,  CDCCOFF,  CDCCOFF,  CDCCOFF,        0, SAUTOOFF,        0 };
-const byte iniPar1[]      = {         0,       60,        0,        0,        0,        0,       60,        0 };
-const byte iniPar2[]      = {         0,      120,        0,        0,        0,        0,      120,        0 };
-const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
+const byte iniPar1[]      = {         0,       70,        0,        0,        0,        0,       60,        0 };
+const byte iniPar2[]      = {         0,      110,        0,        0,        0,        0,      120,        0 };
+const byte iniPar3[]      = {         0,        8,        8,        8,        0,        0,        8,        0 };
 
 #endif
 
