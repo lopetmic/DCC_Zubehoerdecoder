@@ -104,8 +104,8 @@ const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
 const byte encode2P     =   A4;
 // ..................................................
 // defines für die Konfigurationen der Decoder Module
-//#define DECMODULE_1
-#define DECMODULE_2
+#define DECMODULE_1
+//#define DECMODULE_2
 //#define DECMODULE_3
 //#define DECMODULE_4
 //#define DECEXAMPLE
@@ -136,8 +136,8 @@ const byte out3Pins[]   =   {        NC,       NC,       NC,       NC,       NC,
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
 const byte iniFmode[]     = {         0,        0, SAUTOOFF, SAUTOOFF,  CDCCOFF,  CDCCOFF, SAUTOOFF,  CDCCOFF };
-const byte iniPar1[]      = {         0,        0,      114,       60,        0,        0,      140,        0 };
-const byte iniPar2[]      = {         0,        0,      175,      120,        0,        0,       74,        0 };
+const byte iniPar1[]      = {         0,        0,       78,       45,        0,        0,      125,        0 };
+const byte iniPar2[]      = {         0,        0,      155,      145,        0,        0,       65,        0 };
 const byte iniPar3[]      = {         0,        0,        8,        8,        0,        0,        8,        0 };
 
 #endif
